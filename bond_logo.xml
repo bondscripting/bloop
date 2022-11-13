@@ -39,7 +39,7 @@
 	<shear shx="-0.075">
 		<union x="-size2 / 2">
 			<subtract>
-				<link size="size1" corner="corner" thickness="thickness" color="0x203040ff" y="-size1 + thickness"/>
+				<link size="size1" corner="corner" thickness="thickness" color="0x304860ff" y="-size1 + thickness"/>
 				<intersect>
 					<rectangle width="size2 / 2" height="size2" x="size2 / 2" y="-size2 / 2"/>
 					<link size="size2" corner="corner" thickness="thickness + cut" y="-thickness - gap" pad="cut"/>

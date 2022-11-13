@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 import math;
 from PIL import Image, ImageDraw;
@@ -272,7 +272,6 @@ class BaseObject:
 		self.rgba = args["color"];
 		self.color = ColorFromRGBA(self.rgba);
 		self.children = children;
-		pass;
 
 	def ToLocalCoordinates(self, x, y):
 		return x - self.x, y - self.y;
@@ -508,6 +507,10 @@ def ColorFromRGBA(rgba):
 	return (r, g, b, a);
 
 
+def MaxColor(colorsAndWeights):
+	return colorsAndWeights[0][0];
+
+
 def BlendColors(colorsAndWeights):
 	result = (0, 0, 0, 0);
 	totalRGBWeight = 0;
@@ -522,7 +525,30 @@ def BlendColors(colorsAndWeights):
 	return result;
 
 
+def BlendColorsSquared(colorsAndWeights):
+	result = (0, 0, 0, 0);
+	totalRGBWeight = 0;
+	totalAlphaWeight = 0;
+	for color, weight in colorsAndWeights:
+		rgbWeight = weight * color[3];
+		totalRGBWeight += rgbWeight;
+		totalAlphaWeight += weight;
+		rgbT = rgbWeight / max(totalRGBWeight, SMALL_FLOAT);
+		alphaT = weight / max(totalAlphaWeight, SMALL_FLOAT);
+		result = InterpolateColorsSquared(result, color, rgbT, alphaT);
+	return result;
+
+
 def InterpolateColors(colorA, colorB, rgbT, alphaT):
+	return (
+		round(Lerp(colorA[0], colorB[0], rgbT)),
+		round(Lerp(colorA[1], colorB[1], rgbT)),
+		round(Lerp(colorA[2], colorB[2], rgbT)),
+		round(Lerp(colorA[3], colorB[3], alphaT))
+	);
+
+
+def InterpolateColorsSquared(colorA, colorB, rgbT, alphaT):
 	return (
 		round(math.sqrt(Lerp(colorA[0]**2, colorB[0]**2, rgbT))),
 		round(math.sqrt(Lerp(colorA[1]**2, colorB[1]**2, rgbT))),
