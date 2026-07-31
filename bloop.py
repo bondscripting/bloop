@@ -32,7 +32,10 @@ def main():
 
 			elif (arg == "-g"):
 				if (i < numArgs):
-					geometry = tuple(int(v) for v in sys.argv[i].split(","));
+					try:
+						geometry = tuple(int(v) for v in sys.argv[i].split(","));
+					except ValueError:
+						raise BloopException("Geometry passed to -g must contain integers.");
 					i += 1;
 					if ((len(geometry) != 2) and (len(geometry) != 4)):
 						raise BloopException("Geometry passed to -g must have 2 or 4 arguments.");
@@ -48,7 +51,10 @@ def main():
 
 			elif (arg == "-s"):
 				if (i < numArgs):
-					numSamples = int(sys.argv[i]);
+					try:
+						numSamples = int(sys.argv[i]);
+					except ValueError:
+						raise BloopException("Argument passed to -s must be an integer.");
 					if (numSamples <= 0):
 						raise BloopException("Argument passed to -s must be 1 or greater.");
 					i += 1;
@@ -72,6 +78,9 @@ def main():
 
 	except BloopException as e:
 		print(str(e));
+		exit(1);
+	except Exception as e:
+		print("Unexpected error: {0}".format(str(e)));
 		exit(1);
 
 
@@ -419,6 +428,8 @@ class Scale(BaseObject):
 		super().__init__(args, children);
 		self.scx = args["scx"];
 		self.scy = args["scy"];
+		if ((self.scx == 0) or (self.scy == 0)):
+			raise BloopException("Scale values 'scx' and 'scy' must be non-zero.");
 
 	def ToLocalCoordinates(self, x, y):
 		x, y = super().ToLocalCoordinates(x, y);
@@ -430,10 +441,13 @@ class Shear(BaseObject):
 		super().__init__(args, children);
 		self.scx = args["shx"];
 		self.scy = args["shy"];
+		self.det = 1 - (self.scx * self.scy);
+		if (abs(self.det) < SMALL_FLOAT):
+			raise BloopException("Shear values 'shx' and 'shy' produce a non-invertible transform.");
 
 	def ToLocalCoordinates(self, x, y):
 		x, y = super().ToLocalCoordinates(x, y);
-		return x - (self.scx * y), y - (self.scy * x);
+		return (x - (self.scx * y)) / self.det, (y - (self.scy * x)) / self.det;
 
 
 def DrawImage(outputFileName, scene, backColor, geometry, numSamples):
@@ -449,7 +463,7 @@ def DrawImage(outputFileName, scene, backColor, geometry, numSamples):
 	draw = ImageDraw.Draw(image);
 
 	class CacheElement:
-		def init(self):
+		def __init__(self):
 			self.color = None;
 			self.processed = False;
 
