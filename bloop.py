@@ -411,6 +411,28 @@ class Subtract(BaseObject):
 		return result;
 
 
+class Stack(BaseObject):
+	def __init__(self, args, children):
+		super().__init__(args, children);
+
+	def Probe(self, x, y):
+		x, y = self.ToLocalCoordinates(x, y);
+		result = None;
+		for child in self.children:
+			childColor = child.Probe(x, y);
+			if (childColor == None):
+				continue;
+			if (result == None):
+				result = childColor;
+				if (result[3] >= 255):
+					break;
+				continue;
+			result = CompositeColors(result, childColor);
+			if (result[3] >= 255):
+				break;
+		return result;
+
+
 class Rotate(BaseObject):
 	def __init__(self, args, children):
 		super().__init__(args, children);
@@ -562,6 +584,18 @@ def InterpolateColors(colorA, colorB, rgbT, alphaT):
 	);
 
 
+def CompositeColors(baseColor, overColor):
+	baseAlpha = baseColor[3] / 255.0;
+	overAlpha = overColor[3] / 255.0;
+	outAlpha = baseAlpha + overAlpha * (1 - baseAlpha);
+	if (outAlpha <= 0):
+		return (0, 0, 0, 0);
+	outR = ((baseColor[0] * baseAlpha) + (overColor[0] * overAlpha * (1 - baseAlpha))) / outAlpha;
+	outG = ((baseColor[1] * baseAlpha) + (overColor[1] * overAlpha * (1 - baseAlpha))) / outAlpha;
+	outB = ((baseColor[2] * baseAlpha) + (overColor[2] * overAlpha * (1 - baseAlpha))) / outAlpha;
+	return (round(outR), round(outG), round(outB), round(outAlpha * 255));
+
+
 def InterpolateColorsSquared(colorA, colorB, rgbT, alphaT):
 	return (
 		round(math.sqrt(Lerp(colorA[0]**2, colorB[0]**2, rgbT))),
@@ -626,6 +660,7 @@ CORE_PARSERS = {
 	"union": ObjectParser(Union, CORE_OBJECT_PARAMS, ListChildParser()),
 	"intersect": ObjectParser(Intersect, CORE_OBJECT_PARAMS, ListChildParser()),
 	"subtract": ObjectParser(Subtract, CORE_OBJECT_PARAMS, ListChildParser()),
+	"stack": ObjectParser(Stack, CORE_OBJECT_PARAMS, ListChildParser()),
 	"rotate": ObjectParser(Rotate, ROTATE_PARAMS, SingleChildParser()),
 	"scale": ObjectParser(Scale, SCALE_PARAMS, SingleChildParser()),
 	"shear": ObjectParser(Shear, SHEAR_PARAMS, SingleChildParser())
